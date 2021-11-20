@@ -10,8 +10,36 @@ function loadData() {
 }
 
 // Buat fungsi untuk load data disini
+async function loadModel(){
+  console.log('loading model...');
+  model = await tf.layersModel(
+    'file://${__dirname}/model/model.json',
+    false
+  );
+  console.log("Model loaded Successfull")
+};
+
+//fungsi utk rekomendasi film
 
 const movie_arr = tf.tensor(loadData());
 const movie_len = movies.length;
+let recommendations = [];
 
-// Buat fungsi untuk memberi rekomendasi film
+exports.recommed = async function recommend(userId){
+  let user = tf.fill([movie_len].Number(userId));
+  let movie_in_js_array = movie_arr.ArraySync();
+  await loadModel();
+  console.log('Recommending for user: $(userId)');
+  pred_tensor = await model.predict([movie_arr, user]).reshape([movie_len]);
+  pred = pred_tensor.ArraySync();
+
+  let recommendations = [];
+  for(let i = 0;i<6;i++){
+    max = pred_tensor.argMax().arraySync();
+    recommendations.push(movies[max]);
+    pred.splice(max, 1);
+    pred_tensor = tf.tensor(pred);
+  }
+  console.log(recommendations)
+    return recommendations
+}
